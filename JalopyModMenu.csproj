@@ -3,7 +3,7 @@
     <TargetFramework>net35</TargetFramework>
     <LangVersion>5</LangVersion>
     <AssemblyName>JalopyModMenu</AssemblyName>
-    <Version>0.1.0</Version>
+    <Version>0.7.1</Version>
     <Deterministic>true</Deterministic>
     <UnityManagedDir Condition="'$(UnityManagedDir)' == ''">$(MSBuildProjectDirectory)\refs\unity</UnityManagedDir>
     <BepInExCoreDir Condition="'$(BepInExCoreDir)' == ''">$(MSBuildProjectDirectory)\refs\bepinex</BepInExCoreDir>
@@ -14,6 +14,9 @@
     <Reference Include="UnityEngine.CoreModule" HintPath="$(UnityManagedDir)\UnityEngine.CoreModule.dll" Private="false" />
     <Reference Include="UnityEngine.IMGUIModule" HintPath="$(UnityManagedDir)\UnityEngine.IMGUIModule.dll" Private="false" />
     <Reference Include="UnityEngine.PhysicsModule" HintPath="$(UnityManagedDir)\UnityEngine.PhysicsModule.dll" Private="false" />
+    <Reference Include="UnityEngine.VehiclesModule" HintPath="$(UnityManagedDir)\UnityEngine.VehiclesModule.dll" Private="false" />
+    <Reference Include="UnityEngine.TerrainModule" HintPath="$(UnityManagedDir)\UnityEngine.TerrainModule.dll" Private="false" />
+    <Reference Include="UnityEngine.JSONSerializeModule" HintPath="$(UnityManagedDir)\UnityEngine.JSONSerializeModule.dll" Private="false" />
     <Reference Include="BepInEx" HintPath="$(BepInExCoreDir)\BepInEx.dll" Private="false" />
     <Reference Include="0Harmony" HintPath="$(BepInExCoreDir)\0Harmony.dll" Private="false" />
   </ItemGroup>

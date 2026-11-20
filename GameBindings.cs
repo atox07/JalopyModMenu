@@ -13,8 +13,10 @@ namespace JalopyModMenu
         private readonly FieldInfo pauseState;
         private readonly FieldInfo movementUnlocked;
         private readonly FieldInfo assignedKeys;
+        private readonly FieldInfo cursorLock;
 
         public readonly MethodInfo WalkingTick;
+        public Behaviour Menu { get { return menuGlobal.GetValue(null) as Behaviour; } }
 
         public GameBindings()
         {
@@ -31,6 +33,18 @@ namespace JalopyModMenu
             pauseState = RequireField(menuType, "isPaused");
             movementUnlocked = RequireField(menuType, "hasWokenUp");
             assignedKeys = RequireField(menuType, "assignedInputStrings");
+            cursorLock = RequireField(menuType, "lockCursor");
+        }
+
+        public bool LocksCursor(Behaviour menu)
+        {
+            return menu && (bool)cursorLock.GetValue(menu);
+        }
+
+        public void SetCursorLock(Behaviour menu, bool enabled)
+        {
+            if (menu)
+                cursorLock.SetValue(menu, enabled);
         }
 
         public Behaviour FindWalker(Camera view)
@@ -45,7 +59,7 @@ namespace JalopyModMenu
 
         public bool IsWalkingAvailable()
         {
-            var menu = menuGlobal.GetValue(null) as Behaviour;
+            var menu = Menu;
             if (!menu || !(bool)movementUnlocked.GetValue(menu))
                 return false;
 
@@ -53,21 +67,53 @@ namespace JalopyModMenu
             return state == 0 || state == 2;
         }
 
-        public Vector2 ReadMovement()
+        public Vector2 ReadMovement(bool reserveMenuArrows)
         {
-            var menu = menuGlobal.GetValue(null) as Behaviour;
+            var menu = Menu;
             var keys = menu ? assignedKeys.GetValue(menu) as string[] : null;
             return new Vector2(
-                ReadDirection(keys, 6, KeyCode.D) - ReadDirection(keys, 4, KeyCode.A),
-                ReadDirection(keys, 0, KeyCode.W) - ReadDirection(keys, 2, KeyCode.S));
+                ReadDirection(keys, 6, KeyCode.D, reserveMenuArrows) - ReadDirection(keys, 4, KeyCode.A, reserveMenuArrows),
+                ReadDirection(keys, 0, KeyCode.W, reserveMenuArrows) - ReadDirection(keys, 2, KeyCode.S, reserveMenuArrows));
         }
 
-        private static int ReadDirection(string[] keys, int index, KeyCode fallback)
+        public Vector2 ReadDriving(bool reserveMenuArrows)
         {
+            var menu = Menu;
+            var keys = menu ? assignedKeys.GetValue(menu) as string[] : null;
+            return new Vector2(
+                ReadDirection(keys, 14, KeyCode.D, reserveMenuArrows) - ReadDirection(keys, 12, KeyCode.A, reserveMenuArrows),
+                ReadDirection(keys, 8, KeyCode.W, reserveMenuArrows) - ReadDirection(keys, 10, KeyCode.S, reserveMenuArrows));
+        }
+
+        public bool WorldItemActionPressed(bool drop)
+        {
+            var menu = Menu;
+            var keys = menu ? assignedKeys.GetValue(menu) as string[] : null;
+            int index = drop ? 18 : 16;
             if (keys == null || keys.Length <= index + 1)
+                return Input.GetButtonDown(drop ? "Drop" : "Pickup");
+
+            return (!string.IsNullOrEmpty(keys[index]) && Input.GetKeyDown(keys[index])) ||
+                (!string.IsNullOrEmpty(keys[index + 1]) && Input.GetKeyDown(keys[index + 1]));
+        }
+
+        private static int ReadDirection(string[] keys, int index, KeyCode fallback, bool reserveMenuArrows)
+        {
+            string primary = ReadMovementKey(keys, index, reserveMenuArrows);
+            string secondary = ReadMovementKey(keys, index + 1, reserveMenuArrows);
+            if (string.IsNullOrEmpty(primary) && string.IsNullOrEmpty(secondary))
                 return Input.GetKey(fallback) ? 1 : 0;
 
-            return IsPressed(keys[index]) || IsPressed(keys[index + 1]) ? 1 : 0;
+            return IsPressed(primary) || IsPressed(secondary) ? 1 : 0;
+        }
+
+        private static string ReadMovementKey(string[] keys, int index, bool reserveMenuArrows)
+        {
+            string key = keys != null && index < keys.Length ? keys[index] : null;
+            if (reserveMenuArrows && (key == "up" || key == "down" || key == "left" || key == "right"))
+                return null;
+
+            return key;
         }
 
         private static bool IsPressed(string key)
