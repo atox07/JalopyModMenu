@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net35</TargetFramework>
+    <LangVersion>5</LangVersion>
+    <AssemblyName>JalopyModMenu</AssemblyName>
+    <Version>0.1.0</Version>
+    <Deterministic>true</Deterministic>
+    <UnityManagedDir Condition="'$(UnityManagedDir)' == ''">$(MSBuildProjectDirectory)\refs\unity</UnityManagedDir>
+    <BepInExCoreDir Condition="'$(BepInExCoreDir)' == ''">$(MSBuildProjectDirectory)\refs\bepinex</BepInExCoreDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <Reference Include="UnityEngine.CoreModule" HintPath="$(UnityManagedDir)\UnityEngine.CoreModule.dll" Private="false" />
+    <Reference Include="UnityEngine.IMGUIModule" HintPath="$(UnityManagedDir)\UnityEngine.IMGUIModule.dll" Private="false" />
+    <Reference Include="UnityEngine.PhysicsModule" HintPath="$(UnityManagedDir)\UnityEngine.PhysicsModule.dll" Private="false" />
+    <Reference Include="BepInEx" HintPath="$(BepInExCoreDir)\BepInEx.dll" Private="false" />
+    <Reference Include="0Harmony" HintPath="$(BepInExCoreDir)\0Harmony.dll" Private="false" />
+  </ItemGroup>
+  <Target Name="VerifyModReferences" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="'%(Reference.HintPath)' != '' and !Exists('%(Reference.HintPath)')" Text="Missing build reference: %(Reference.HintPath)" />
+  </Target>
+</Project>

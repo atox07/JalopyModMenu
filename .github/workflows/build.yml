@@ -1,0 +1,46 @@
+name: Build Jalopy Mod Menu
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Download build references
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $refRoot = Join-Path $env:RUNNER_TEMP 'jalopy-mod-refs'
+          New-Item -ItemType Directory -Path $refRoot | Out-Null
+          $unityZip = Join-Path $refRoot 'unity.zip'
+          $loaderZip = Join-Path $refRoot 'bepinex.zip'
+          Invoke-WebRequest -Uri 'https://unity.bepinex.dev/libraries/2017.4.23.zip' -OutFile $unityZip -MaximumRetryCount 3
+          Invoke-WebRequest -Uri 'https://github.com/BepInEx/BepInEx/releases/download/v5.4.23.2/BepInEx_win_x64_5.4.23.2.zip' -OutFile $loaderZip -MaximumRetryCount 3
+          Expand-Archive -LiteralPath $unityZip -DestinationPath (Join-Path $refRoot 'unity')
+          Expand-Archive -LiteralPath $loaderZip -DestinationPath (Join-Path $refRoot 'loader')
+          $unityCore = Get-ChildItem (Join-Path $refRoot 'unity') -Recurse -File -Filter 'UnityEngine.CoreModule.dll' | Select-Object -First 1
+          $loaderCore = Get-ChildItem (Join-Path $refRoot 'loader') -Recurse -File -Filter 'BepInEx.dll' | Select-Object -First 1
+          if (!$unityCore -or !$loaderCore) { throw 'Unity or BepInEx build references are missing from the downloaded archives.' }
+          "JALOPY_UNITY_MANAGED=$($unityCore.DirectoryName)" >> $env:GITHUB_ENV
+          "JALOPY_BEPINEX_CORE=$($loaderCore.DirectoryName)" >> $env:GITHUB_ENV
+
+      - name: Compile
+        shell: pwsh
+        run: |
+          dotnet build JalopyModMenu.csproj --configuration Release "-p:UnityManagedDir=$env:JALOPY_UNITY_MANAGED" "-p:BepInExCoreDir=$env:JALOPY_BEPINEX_CORE"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JalopyModMenu
+          path: bin/Release/net35/JalopyModMenu.dll
+          if-no-files-found: error
